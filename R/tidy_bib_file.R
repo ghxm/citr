@@ -5,6 +5,7 @@
 #' @param rmd_file Character. One path or a vector of paths to the R Markdown files that use the messy bibliography file.
 #' @param messy_bibliography Character. One path or a vector of paths to the messy bibliography file(s).
 #' @param file Character. Path and name for the to-be-created tidy bibliography. If \code{NULL} the messy bibliography is replaced.
+#' @param keep_existing Character. If \code{file} is not \code{NULL}, \code{keep_existing} determines which entries are kept. If \code{"all"}, all entries are kept. If \code{"none"}, all entries are replaced. If \code{"necessary"}, only entries that are in the R Markdown files are kept.
 #' @inheritParams query_bib
 #'
 #' @export
@@ -16,6 +17,7 @@ tidy_bib_file <- function(
   rmd_file
   , messy_bibliography
   , file = NULL
+  , keep_existing = 'none'
   , encoding = getOption("citr.encoding")
   , betterbiblatex_format = getOption("citr.betterbiblatex_format")
 ) {
@@ -23,14 +25,27 @@ tidy_bib_file <- function(
   assert_that(is.character(messy_bibliography))
   if(!is.null(file)) {
     assert_that(is.string(file))
+
+    # option 'append' to existing entries in file
+    if (keep_existing != 'none') {
+      # read in bib file
+      tidy_bib <- RefManageR::ReadBib(file, check = FALSE, .Encoding = encoding)
+    }
+
+
   } else {
     file <- messy_bibliography
   }
+
   assert_that(is.string(encoding))
   assert_that(length(encoding) == 1)
   assert_that(is.string(betterbiblatex_format))
   if(!betterbiblatex_format %in% c("bibtex", "biblatex")) {
     stop("Bibliography format not supported. Use either 'bibtex'  or 'biblatex'.")
+  }
+
+  if (!keep_existing %in% c('all', 'necessary', 'none')) {
+    stop("keep_existing must be one of 'all', 'necessary', or 'none'.")
   }
 
   rmd <- c()
@@ -56,11 +71,27 @@ tidy_bib_file <- function(
     complete_bibliography <- append(complete_bibliography, RefManageR::ReadBib(messy_bibliography[i], check = FALSE, .Encoding = encoding))
   }
 
-  necessary_bibliography <- complete_bibliography[names(complete_bibliography) %in% reference_handles]
+  if (keep_existing == 'none') {
+    # keep only the entries that are in the messy bibliography
+    necessary_bibliography <- complete_bibliography[names(complete_bibliography) %in% reference_handles]
+
+  } else if  (keep_existing == 'all') {
+
+    # keep all entries in the messy bibliography
+    necessary_bibliography <- append(complete_bibliography[(names(complete_bibliography) %in% reference_handles) & !(names(complete_bibliography) %in% names(tidy_bib))], tidy_bib)
+
+
+  } else if  (keep_existing == 'necessary') {
+
+    # keep only those entries from the tidy bibliography that are in the text
+    necessary_bibliography <- append(complete_bibliography[names(complete_bibliography) %in% reference_handles & !(names(complete_bibliography) %in% names(tidy_bib))], tidy_bib[names(tidy_bib) %in% reference_handles])
+
+  }
+
 
   if(length(necessary_bibliography) == 0) stop("Found none of the ", length(reference_handles), " necessary references in the look-up bibliography.")
 
-  if(length(necessary_bibliography) < length(reference_handles)) warning("Only found ", length(necessary_bibliography), " out of ", length(reference_handles), " necessary references in the look-up bibliography. The following references could not be found:\n  ", paste(reference_handles[!reference_handles %in% names(complete_bibliography)], collapse = ", "))
+  if(length(necessary_bibliography) < length(reference_handles)) warning("Only found ", length(necessary_bibliography), " out of ", length(reference_handles), " necessary references in the look-up bibliography. The following references could not be found:\n  ", paste(reference_handles[!reference_handles %in% names(necessary_bibliography)], collapse = ", "))
 
   message("Removing ", length(complete_bibliography) - length(unique(necessary_bibliography)), " unneeded bibliography entries.")
 

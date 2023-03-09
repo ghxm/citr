@@ -1,0 +1,6 @@
+---
+title: "R Notebook"
+output: html_document
+---
+
+These are some citations @savage_empirical_2009 [@baumer_markdown_2014; savage_empirical_2009] @-savage_empirical_2009 [@savage_empirical_2009] @doesnotexist @notinmessybutintidy.

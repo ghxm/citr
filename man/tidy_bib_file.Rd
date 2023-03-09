@@ -8,16 +8,19 @@ tidy_bib_file(
   rmd_file,
   messy_bibliography,
   file = NULL,
+  keep_existing = "none",
   encoding = getOption("citr.encoding"),
   betterbiblatex_format = getOption("citr.betterbiblatex_format")
 )
 }
 \arguments{
-\item{rmd_file}{Character. One or more paths to the R Markdown files that use the messy bibliography file.}
+\item{rmd_file}{Character. One path or a vector of paths to the R Markdown files that use the messy bibliography file.}
 
-\item{messy_bibliography}{Character. Path to the messy bibliography file.}
+\item{messy_bibliography}{Character. One path or a vector of paths to the messy bibliography file(s).}
 
 \item{file}{Character. Path and name for the to-be-created tidy bibliography. If \code{NULL} the messy bibliography is replaced.}
+
+\item{keep_existing}{Character. If \code{file} is not \code{NULL}, \code{keep_existing} determines which entries are kept. If \code{"all"}, all entries are kept. If \code{"none"}, all entries are replaced. If \code{"necessary"}, only entries that are in the R Markdown files are kept.}
 
 \item{encoding}{Character. Encoding of the Bib(La)TeX-file. See the \code{\link{connection}}.}
 
@@ -29,5 +32,5 @@ Zotero/Juris-M is running.}
 Removes duplicate and unneeded entries from a Bib(La)Tex-file.
 }
 \examples{
-NULL
+\dontrun{tidy_bib_file(rmd_file = c("introduction.Rmd", "methods.Rmd"), messy_bibliography = "references.bib", file = "tidy_references.bib")}
 }
